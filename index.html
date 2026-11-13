@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Practice Pad</title>
+
+    <!-- CodeMirror editor files (loaded from the internet) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/dracula.min.css">
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/show-hint.min.css">
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/fold/foldgutter.min.css">
+
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        .top {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: space-between;
+            align-items: center;
+            min-height: 50px;
+            padding: 6px 16px;
+            background: #2f5bd8;
+            color: white;
+            box-sizing: border-box;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 20px;
+        }
+
+        .tools {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        #status {
+            font-size: 13px;
+            margin-right: 8px;
+        }
+
+        button {
+            padding: 5px 12px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        label {
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .boxes {
+            display: flex;
+            height: calc(100vh - 50px);
+        }
+
+        .pane {
+            width: 50%;
+            height: 100%;
+            min-width: 0;
+        }
+
+        .CodeMirror {
+            height: 100%;
+            font-family: Consolas, monospace;
+            font-size: 16px;
+        }
+
+        /* Right side: result on top, console below */
+        .right {
+            width: 50%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            border-left: 2px solid #2f5bd8;
+            box-sizing: border-box;
+        }
+
+        .right iframe {
+            flex: 1;
+            width: 100%;
+            border: none;
+            background: white;
+        }
+
+        #console {
+            height: 25%;
+            margin: 0;
+            padding: 8px;
+            overflow: auto;
+            background: #111;
+            color: #7CFC00;
+            font: 14px Consolas, monospace;
+            white-space: pre-wrap;
+        }
+
+        @media (max-width: 700px) {
+            .boxes {
+                flex-direction: column;
+            }
+
+            .pane,
+            .right {
+                width: 100%;
+                height: 50%;
+            }
+
+            .right {
+                border-left: none;
+                border-top: 2px solid #2f5bd8;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="top">
+        <h1>Practice Pad</h1>
+        <div class="tools">
+            <span id="status">Ready</span>
+            <label><input type="checkbox" id="jsToggle"> JavaScript</label>
+            <button id="runBtn">Run</button>
+            <button id="smaller">A-</button>
+            <button id="bigger">A+</button>
+            <button id="themeBtn">Theme</button>
+            <button id="downloadBtn">Download</button>
+            <button id="clearBtn">Clear</button>
+        </div>
+    </div>
+
+    <div class="boxes">
+        <div class="pane"><textarea id="code"></textarea></div>
+        <div class="right">
+            <!-- sandbox is set by JavaScript: "" = no scripts, "allow-scripts" = scripts only -->
+            <iframe id="result" sandbox=""></iframe>
+            <pre id="console"></pre>
+        </div>
+    </div>
+
+    <!-- CodeMirror core + languages -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/xml/xml.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/javascript/javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/css/css.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/htmlmixed/htmlmixed.min.js"></script>
+    <!-- Helpers: auto close, brackets, highlight, comments, folding, suggestions -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/closetag.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/closebrackets.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/matchbrackets.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/matchtags.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/selection/active-line.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/comment/comment.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/fold/foldcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/fold/foldgutter.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/fold/xml-fold.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/fold/brace-fold.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/show-hint.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/xml-hint.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/html-hint.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/css-hint.min.js"></script>
+
+    <script>
+        var starter =
+            '<!DOCTYPE html>\n<html>\n<head>\n  <style>\n    body { font-family: Arial; background: #fff8e1; text-align: center; }\n    h1 { color: #2f5bd8; }\n  </style>\n</head>\n<body>\n  <h1>My First Page</h1>\n  <p>Change this text and watch the result update.</p>\n</body>\n</html>';
+
+        var result = document.getElementById("result");
+        var status = document.getElementById("status");
+        var jsToggle = document.getElementById("jsToggle");
+        var consoleBox = document.getElementById("console");
+
+        // Safe helpers for saving (some browsers block storage)
+        function store(key, value) {
+            try { localStorage.setItem(key, value); return true; } catch (e) { return false; }
+        }
+        function read(key) {
+            try { return localStorage.getItem(key); } catch (e) { return null; }
+        }
+
+        // Create the editor
+        var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
+            mode: "htmlmixed",
+            theme: read("pad-theme") || "dracula",
+            lineNumbers: true,
+            lineWrapping: true,
+            tabSize: 2,
+            indentUnit: 2,
+            indentWithTabs: false,
+            autoCloseTags: true,
+            autoCloseBrackets: true,
+            matchBrackets: true,
+            matchTags: { bothTags: true },
+            styleActiveLine: true,
+            foldGutter: true,
+            gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"],
+            extraKeys: {
+                "Ctrl-Space": "autocomplete",
+                "Ctrl-/": "toggleComment",
+                "Ctrl-S": function () { saveWork(); },
+                "Ctrl-Enter": function () { showResult(); },
+                "Tab": function (cm) {
+                    if (cm.somethingSelected()) { cm.indentSelection("add"); }
+                    else { cm.replaceSelection("  ", "end"); }
+                },
+                "Shift-Tab": function (cm) { cm.indentSelection("subtract"); }
+            }
+        });
+
+        // Load saved code (or the starter)
+        var saved = read("pad-code");
+        editor.setValue(saved !== null ? saved : starter);
+
+        // Font size
+        var fontSize = parseInt(read("pad-font")) || 16;
+        function applyFont() {
+            document.querySelector(".CodeMirror").style.fontSize = fontSize + "px";
+            editor.refresh();
+            store("pad-font", fontSize);
+        }
+        applyFont();
+
+        // Small script that sends console.log messages out of the preview
+        var bridge = '<script>(function(){var send=function(t,a){var s=Array.prototype.map.call(a,function(x){try{return typeof x==="object"?JSON.stringify(x):String(x)}catch(e){return String(x)}}).join(" ");parent.postMessage({pad:1,type:t,text:s},"*")};["log","warn","error"].forEach(function(k){var o=console[k];console[k]=function(){send(k,arguments);o.apply(console,arguments)}});window.onerror=function(m){send("error",[m])}})();<\/script>';
+
+        // Show the result in the right box
+        function showResult() {
+            var html = editor.getValue();
+            var js = jsToggle.checked;
+            consoleBox.textContent = "";
+
+            if (js) {
+                // Put the console helper right after <head>, or at the very start
+                if (/<head[^>]*>/i.test(html)) {
+                    html = html.replace(/<head[^>]*>/i, function (m) { return m + bridge; });
+                } else {
+                    html = bridge + html;
+                }
+            }
+
+            // Scripts are blocked unless the JavaScript box is ticked
+            result.setAttribute("sandbox", js ? "allow-scripts" : "");
+            result.srcdoc = html;
+        }
+        showResult();
+
+        // Show console messages that come from the preview
+        window.addEventListener("message", function (e) {
+            if (e.source !== result.contentWindow) return;
+            if (!e.data || !e.data.pad) return;
+            var prefix = e.data.type === "error" ? "Error: " : (e.data.type === "warn" ? "Warning: " : "");
+            consoleBox.textContent += prefix + e.data.text + "\n";
+            consoleBox.scrollTop = consoleBox.scrollHeight;
+        });
+
+        // Autosave (waits half a second after she stops typing)
+        var saveTimer;
+        function saveWork() {
+            var ok = store("pad-code", editor.getValue());
+            var t = new Date().toLocaleTimeString();
+            status.textContent = ok ? "Saved at " + t : "Could not save";
+        }
+
+        editor.on("change", function () {
+            // With JavaScript on, the preview updates only when she presses Run
+            if (!jsToggle.checked) showResult();
+            status.textContent = "Saving...";
+            clearTimeout(saveTimer);
+            saveTimer = setTimeout(saveWork, 500);
+        });
+
+        // Suggestions pop up while typing
+        editor.on("inputRead", function (cm, change) {
+            if (change.origin !== "+input") return;
+            var ch = change.text[0].slice(-1);
+            if (/[a-zA-Z<:\-]/.test(ch) && !cm.state.completionActive) {
+                cm.showHint({ completeSingle: false });
+            }
+        });
+
+        // Buttons
+        document.getElementById("runBtn").onclick = showResult;
+        jsToggle.onchange = showResult;
+
+        document.getElementById("bigger").onclick = function () { if (fontSize < 32) { fontSize += 2; applyFont(); } };
+        document.getElementById("smaller").onclick = function () { if (fontSize > 10) { fontSize -= 2; applyFont(); } };
+
+        document.getElementById("themeBtn").onclick = function () {
+            var next = editor.getOption("theme") === "dracula" ? "default" : "dracula";
+            editor.setOption("theme", next);
+            store("pad-theme", next);
+        };
+
+        document.getElementById("downloadBtn").onclick = function () {
+            var blob = new Blob([editor.getValue()], { type: "text/html" });
+            var link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = "my-practical.html";
+            link.click();
+            URL.revokeObjectURL(link.href);
+        };
+
+        document.getElementById("clearBtn").onclick = function () {
+            if (confirm("Clear all code?")) { editor.setValue(""); saveWork(); }
+        };
+    </script>
+
+</body>
+
+</html>
